@@ -2,6 +2,15 @@
 tbody tr {
   cursor: pointer;
 }
+
+.project-link {
+  color: white !important;
+  text-decoration: none;
+}
+
+.price {
+  color: green;
+}
 </style>
 
 <script>
@@ -40,18 +49,71 @@ $(function() {
 })
 </script>
 
+<script>
+$(function() {
+  $('#sortSelector').on('change', function(e) {
+    console.log('Hello World', e.target.value);
+    if (e.target.value.length > 0) {
+      $('#searchButton').prop('disabled', false);
+    } else {
+      $('#searchButton').prop('disabled', true);
+    }
+  });
+})
+$(function() {
+  $('#filterText').on('keyup', function(e) {
+    console.log('Hello World from text', e.target.value);
+    if (e.target.value.length > 0) {
+      $('#searchButton').prop('disabled', false);
+    } else {
+      $('#searchButton').prop('disabled', true);
+    }
+  });
+})
+
+$(function() {
+  $('#searchButton').on('click', function(e) {
+    console.log('Hello World Call the DB');
+  });
+})
+</script>
+
+
 <div class="available-projects container">
   <div class="text-center">
-    <h3>Select a Source</h3>
+    <!-- <h3>Select a Source</h3>
     <p class="mt-3">
       Select one of the sources below to create your course section:
-    </p>
+    </p> -->
   </div>
 
   <%= form_for @conn, Routes.delivery_path(@conn, :create_section), [id: "select-project-form"], fn f -> %>
     <div class="my-5">
-      <h4>Available Projects</h4>
+      <h3>Select Curriculum</h3>
+      <h4>Select a curriculum source to create your course section.</h4>
+
+
+    <div class="d-inline-flex my-3 w-100 bg-primary">
+      <input class="form-control col m-2" type="text" id="filterText" data-users="hello">
+      <select class="form-control m-2 col-md-3 col-sm-2" id="sortSelector">
+        <option selected name="sort_value" value="" disabled>Select Sorting Criteria</option>
+        <option name="sort_value" value="inserted_at">Inserted At</option>
+        <option name="sort_value" value="published_at">Published At</option>
+      </select>
+      <input type="button" class="m-2"  disabled id="searchButton" value="Search"/>
+    </div>
+
+    <div class="form-label-group">
+    <%= text_input f, :c_name, class: "form-control " <> error_class(f, :c_name, "is-invalid"),
+      placeholder: "Course Name", required: true, autofocus: focusHelper(f, :c_name, default: true) %>
+    </div>
+
+    <div>
+    <%= select f, :criteria, ["Created At", "Published At"], prompt: "Choose Sorting Criteria" %>
+    </div>
+
       <%= if Enum.count(@sources) > 0 do %>
+     <!--
         <table class="table table-hover">
           <thead>
             <tr>
@@ -97,6 +159,55 @@ $(function() {
             <% end %>
           </tbody>
         </table>
+      -->
+
+
+ <%= for source <- filter_data(@sources, "Hello World") do %>
+  <div>
+  <%= inspect source %>
+  <br />
+  </div>
+  <% end %>
+
+
+
+  <div class="row row-cols-1 row-cols-sm-2 row-cols-md-2 row-cols-lg-3 g-4 mt-3">
+    <%= for source <- @sources do %>
+      <div class="col my-1 mb-4 ml-3">
+      <a href="<%= Routes.page_delivery_path(@conn, :index, source.project.slug) %>" class="project-link course-card-link card h-100">
+        <img src="<%= Routes.static_path(@conn, "/images/course_default.jpg") %>" class="card-img-top" alt="course image">
+        <div class="card-body">
+          <h5 class="card-title"><%= source.project.title %></h5>
+          <div class="card-text">
+          <p><%= source.description %></p>
+          <div class="d-flex">
+          <p class="price">
+          <%=
+                  case Map.has_key?(source, :type) and Map.get(source, :type) == :blueprint do
+                    true ->
+                      if source.requires_payment do
+                        case Money.to_string(source.amount) do
+                          {:ok, m} -> m
+                          _ -> "Yes"
+                        end
+                      else
+                        "None"
+                      end
+
+                    _ ->
+                      "None"
+                  end
+                  %>
+          </p>
+          <p class="ml-2"><%= format_datetime(source.inserted_at, 'date') %></p>
+          </div>
+          </div>
+        </div>
+      </a>
+      </div>
+    <% end %>
+  </div>
+
       <% else %>
         <p class="my-3 text-center text-secondary">
         You do not have any available sources to use to create a course section.
@@ -106,7 +217,7 @@ $(function() {
 
     <%= hidden_input f, :remix, value: @remix %>
 
-    <div class="text-center">
+    <div class="text-center mb-3">
       <%= submit "Select and Continue", id: "select-submit", class: "btn btn-primary", disabled: true %>
     </div>
   <% end %>

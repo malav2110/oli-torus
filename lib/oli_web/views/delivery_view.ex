@@ -1,6 +1,7 @@
 defmodule OliWeb.DeliveryView do
   use OliWeb, :view
 
+  alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Oli.Accounts.User
   alias Lti_1p3.Tool.ContextRoles
@@ -48,6 +49,24 @@ defmodule OliWeb.DeliveryView do
       true ->
         Routes.delivery_path(conn, :index)
     end
+  end
+
+  def sort_data(sources, sort_value) do
+    IO.inspect sort_value
+    IO.inspect sources
+    cond do
+    sort_value === "inserted_at" -> Enum.sort_by(sources, &(&1.inserted_at))
+    sort_value === "updated_at" -> Enum.sort_by(sources, &(&1.updated_at))
+    true -> sources
+    end
+  end
+
+  def filter_data(sources, filter_value) do
+    IO.inspect sources
+    IO.inspect filter_value
+    hello =  Enum.filter(sources, fn x -> x.project.title === filter_value end)
+    IO.inspect hello
+    hello
   end
 
   def user_role_is_student(conn, user) do
